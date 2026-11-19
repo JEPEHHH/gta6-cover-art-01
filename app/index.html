@@ -3,21 +3,103 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Cover Snap</title>
+<title>VICE HOUR — cover studio</title>
 <link rel="stylesheet" href="./style.css">
 </head>
 <body>
-<main class="app">
-  <section class="controls">
-    <h1>Cover Snap</h1>
-    <p>A photo and a caption, made into a square cover.</p>
-    <label>Photo <input id="photo" type="file" accept="image/*"></label>
-    <label>Caption <input id="caption" type="text" maxlength="40" value="Sunset Heist"></label>
-    <button id="export" type="button">Export PNG 1080 x 1080</button>
-    <p id="status" role="status"></p>
+<div class="app">
+  <header class="topbar">
+    <div class="brand">
+      <span class="mark" aria-hidden="true"><i></i><i></i></span>
+      <span class="brand-text">
+        <span class="wordmark">VICE HOUR</span>
+        <span class="sub">POSTER STUDIO</span>
+      </span>
+      <span class="claim">GTA-style cover art from your own photos — 100% offline</span>
+    </div>
+    <div class="topbar-actions">
+      <span class="pill">&#9679; LOCAL &middot; OFFLINE</span>
+      <button id="randomizeBtn" class="ghost" type="button">RANDOMIZE</button>
+      <button id="exportBtn" class="primary" type="button">EXPORT PNG</button>
+    </div>
+  </header>
+
+  <aside class="rail rail-left">
+    <section class="card">
+      <h2 class="card-title">PHOTOS</h2>
+      <button id="photoDrop" class="drop" type="button">
+        <span class="drop-arrow" aria-hidden="true">&#8595;</span>
+        <span class="drop-line">DROP PHOTOS OR CLICK</span>
+        <span class="drop-sub">JPG &middot; PNG &middot; UP TO 6</span>
+      </button>
+      <input id="photoInput" class="visually-hidden" type="file" accept="image/*" multiple>
+      <div id="thumbs" class="thumbs"></div>
+      <p class="card-note">NO UPLOAD &middot; NO SIGN-IN</p>
+    </section>
+
+    <section class="card">
+      <h2 class="card-title">LAYOUT</h2>
+      <div id="layoutList" class="layout-list"></div>
+    </section>
+
+    <section class="card">
+      <h2 class="card-title">GRADE</h2>
+      <div id="gradeList" class="grade-list"></div>
+    </section>
+  </aside>
+
+  <section class="stage">
+    <div class="matte">
+      <canvas id="cover" width="1080" height="1080" aria-label="Live cover preview"></canvas>
+    </div>
+    <div class="hud"><span id="hud">1080 &times; 1080 &middot; COLLAGE &middot; SUNSET</span></div>
   </section>
-  <canvas id="cover" width="1080" height="1080" aria-label="The cover"></canvas>
-</main>
+
+  <aside class="rail rail-right">
+    <section class="card">
+      <h2 class="card-title" id="panelLabel">PANEL 1</h2>
+      <div id="panelChips" class="chips"></div>
+      <label class="slider" for="focusX"><span>FOCUS X</span><b id="focusXValue">0.50</b>
+        <input id="focusX" type="range" min="0" max="1" step="0.01" value="0.5"></label>
+      <label class="slider" for="focusY"><span>FOCUS Y</span><b id="focusYValue">0.50</b>
+        <input id="focusY" type="range" min="0" max="1" step="0.01" value="0.5"></label>
+      <label class="slider" for="zoom"><span>ZOOM</span><b id="zoomValue">1.00&times;</b>
+        <input id="zoom" type="range" min="1" max="3" step="0.01" value="1"></label>
+      <button id="fitBtn" class="ghost wide" type="button">FIT PHOTO TO PANEL</button>
+    </section>
+
+    <section class="card">
+      <h2 class="card-title">CAPTION</h2>
+      <label class="field" for="kickerInput"><span>KICKER</span>
+        <input id="kickerInput" type="text" maxlength="32" value="VICE CITY · 1986"></label>
+      <label class="field" for="titleInput"><span>TITLE</span>
+        <textarea id="titleInput" rows="2" maxlength="46">LAST LIGHT / ON OCEAN DRIVE</textarea></label>
+      <label class="field" for="taglineInput"><span>TAGLINE</span>
+        <input id="taglineInput" type="text" maxlength="52" value="A HEIST, A HURRICANE, ONE NIGHT LEFT"></label>
+      <p class="card-note">A SLASH SPLITS THE TWO TITLE LINES</p>
+    </section>
+
+    <section class="card">
+      <h2 class="card-title">EFFECTS</h2>
+      <label class="slider" for="grain"><span>GRAIN</span><b id="grainValue">0.45</b>
+        <input id="grain" type="range" min="0" max="1" step="0.01" value="0.45"></label>
+      <label class="slider" for="halftone"><span>HALFTONE</span><b id="halftoneValue">0.30</b>
+        <input id="halftone" type="range" min="0" max="1" step="0.01" value="0.3"></label>
+      <label class="slider" for="scan"><span>SCANLINES</span><b id="scanValue">0.18</b>
+        <input id="scan" type="range" min="0" max="1" step="0.01" value="0.18"></label>
+      <label class="slider" for="vignette"><span>VIGNETTE</span><b id="vignetteValue">0.50</b>
+        <input id="vignette" type="range" min="0" max="1" step="0.01" value="0.5"></label>
+      <label class="toggle" for="frameToggle"><span>PANEL BORDER</span>
+        <input id="frameToggle" type="checkbox" checked><i aria-hidden="true"></i></label>
+    </section>
+  </aside>
+
+  <footer class="strip">
+    <span class="hints">DROP PHOTOS &middot; CLICK A PANEL &middot; DRAG PANS &middot; WHEEL ZOOMS &middot; ARROWS NUDGE &middot; CTRL/&#8984;+E EXPORT</span>
+    <div id="sizeList" class="size-list"></div>
+  </footer>
+</div>
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
 <script type="module" src="./src/main.js"></script>
 </body>
 </html>

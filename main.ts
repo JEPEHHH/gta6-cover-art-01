@@ -1,40 +1,86 @@
-// A working gta6-cover-art-01 entry (Node 22, standard library only): the app is this directory's app/ folder, plain
-// static files a desktop browser loads offline (app/index.html and its ES modules, no library and no network
-// request), and the program hands it in. It copies app/ and screenshots/ from beside this file to /output and writes
-// /output/dossier.json, the summary the judge reads, with the vendored make.fun library. Only the plumbing, not the
-// cover art the bounty asks for: Cover Snap, a plain one-photo square cover with a sunset tint and a bold caption,
-// exported as a 1080 x 1080 PNG. Its two sample photos (app/samples/) were made for make.fun with an image model and
-// are free to use. Build your own GTA-style cover maker in its place, put your 3 or 4 PNG or JPEG screenshots in
-// screenshots/ (the first by name is the cover) and run it.
+// VICE HOUR — entrypoint for the make.fun gta6-cover-art-01 bounty (Node 22, standard library only).
+//
+// This program does one job: it hands the app in. `app/` is a plain static studio (index.html plus ES
+// modules, the OFL fonts and two sample photos) that a desktop browser loads with no network request,
+// and `screenshots/` holds four real captures of it. Both are copied beside this file into the output
+// directory, then the vendored library writes dossier.json — the summary the judge reads.
 //
 // Serve it locally with `node serve.ts`, then open http://localhost:8080.
 // Outside the grader's container, MAKEFUN_OUTPUT_DIR stands in for /output:
 //   mkdir -p out && MAKEFUN_OUTPUT_DIR=out node main.ts
 
-import { cpSync, existsSync, mkdirSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { buildDossier } from './vendor/makefun-app.ts';
 
-const here = fileURLToPath(new URL('.', import.meta.url));
-const out = process.env.MAKEFUN_OUTPUT_DIR ?? '/output';
+// The scorer's own caps (reference/gate.json): text_max_bytes shapes the dossier bytes, the rest refuse
+// an entry the scorer would refuse anyway — more than four screenshots or one over 256 KiB, more than
+// 993 files (or 48 MiB) under app/, or a single app path longer than 1000 bytes.
+const CAPS = {
+  text_max_bytes: 163840,
+  screenshots: { max: 4, max_bytes: 262144 },
+  app_max_files: 993,
+  app_max_bytes: 50331648,
+  app_path_max_bytes: 1000,
+};
 
-mkdirSync(out, { recursive: true });
-cpSync(join(here, 'app'), join(out, 'app'), { recursive: true });
-mkdirSync(join(out, 'screenshots'), { recursive: true });
-if (existsSync(join(here, 'screenshots'))) cpSync(join(here, 'screenshots'), join(out, 'screenshots'), { recursive: true });
+const ROOT = fileURLToPath(new URL('.', import.meta.url));
+const OUT = process.env.MAKEFUN_OUTPUT_DIR ?? '/output';
+const SHOT_PATTERN = /\.(png|jpg|jpeg)$/i;
 
-// The scorer's own caps (reference/gate.json): only text_max_bytes shapes the bytes; the others refuse an entry the
-// scorer would refuse (more than 4 screenshots or one over 256 KiB; more than 993 files in app/ or 48 MiB of app
-// files, in all, or a path under app/ over 1000 bytes: app/ counts beside /output's own 1000-entry cap, its
-// screenshots/ and dossier.json).
-writeFileSync(
-  join(out, 'dossier.json'),
-  buildDossier(out, {
-    text_max_bytes: 163840,
-    screenshots: { max: 4, max_bytes: 262144 },
-    app_max_files: 993,
-    app_max_bytes: 50331648,
-    app_path_max_bytes: 1000,
-  }),
+function refuse(reason: string): never {
+  process.stderr.write(`vice-hour: ${reason}\n`);
+  process.exit(1);
+}
+
+// Total files and bytes under a directory, so the summary reports what was actually handed in.
+function weigh(directory: string): { files: number; bytes: number } {
+  let files = 0;
+  let bytes = 0;
+  for (const entry of readdirSync(directory, { withFileTypes: true })) {
+    const path = join(directory, entry.name);
+    if (entry.isDirectory()) {
+      const nested = weigh(path);
+      files += nested.files;
+      bytes += nested.bytes;
+    } else if (entry.isFile()) {
+      files += 1;
+      bytes += statSync(path).size;
+    }
+  }
+  return { files, bytes };
+}
+
+const appDir = join(ROOT, 'app');
+if (!existsSync(join(appDir, 'index.html'))) refuse('app/index.html is missing — nothing to hand in');
+
+const shotsDir = join(ROOT, 'screenshots');
+const shots = existsSync(shotsDir)
+  ? readdirSync(shotsDir).filter((name) => SHOT_PATTERN.test(name)).sort()
+  : [];
+if (shots.length < 3 || shots.length > 4) {
+  refuse(`screenshots/ must hold 3 or 4 .png/.jpg files, found ${shots.length}`);
+}
+
+// Fail early with a plain sentence rather than letting the dossier writer trip over one fat frame.
+for (const name of shots) {
+  const bytes = statSync(join(shotsDir, name)).size;
+  if (bytes > CAPS.screenshots.max_bytes) {
+    refuse(`screenshots/${name} is ${bytes} bytes, over the ${CAPS.screenshots.max_bytes} byte cap`);
+  }
+}
+
+mkdirSync(OUT, { recursive: true });
+cpSync(appDir, join(OUT, 'app'), { recursive: true });
+cpSync(shotsDir, join(OUT, 'screenshots'), { recursive: true });
+
+const dossier = buildDossier(OUT, CAPS);
+writeFileSync(join(OUT, 'dossier.json'), dossier);
+
+const app = weigh(join(OUT, 'app'));
+const first = shots[0];
+process.stdout.write(
+  `vice-hour · ${app.files} app files · ${app.bytes} bytes · ` +
+    `${shots.length} screenshots (${first} first) · dossier ${dossier.length} bytes\n`,
 );
