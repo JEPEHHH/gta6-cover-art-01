@@ -3,21 +3,128 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Cover Snap</title>
+<title>NEON CUT — poster studio</title>
+<meta name="description" content="GTA-style cover art from your own photos. Painted sunsets, pasted prints, poster lettering. 100% offline.">
 <link rel="stylesheet" href="./style.css">
 </head>
 <body>
-<main class="app">
-  <section class="controls">
-    <h1>Cover Snap</h1>
-    <p>A photo and a caption, made into a square cover.</p>
-    <label>Photo <input id="photo" type="file" accept="image/*"></label>
-    <label>Caption <input id="caption" type="text" maxlength="40" value="Sunset Heist"></label>
-    <button id="export" type="button">Export PNG 1080 x 1080</button>
-    <p id="status" role="status"></p>
-  </section>
-  <canvas id="cover" width="1080" height="1080" aria-label="The cover"></canvas>
-</main>
+<div class="app">
+  <header class="topbar">
+    <div class="brand">
+      <span class="logo" aria-hidden="true"><i></i><i></i></span>
+      <div class="brand-text">
+        <h1>NEON CUT</h1>
+        <p><span>POSTER STUDIO</span> GTA-style cover art from your own photos — 100% offline</p>
+      </div>
+    </div>
+    <div class="topbar-actions">
+      <span class="pill"><b>●</b> LOCAL · OFFLINE</span>
+      <button id="randomize" class="ghost" type="button">RANDOMIZE</button>
+      <button id="export-png" class="primary" type="button">EXPORT PNG</button>
+    </div>
+  </header>
+
+  <aside class="rail rail-left">
+    <section class="card">
+      <h2>PHOTOS <span id="photo-count">0 / 6</span></h2>
+      <label id="photo-drop" class="drop" for="photo-input">
+        <span class="drop-glyph" aria-hidden="true">+</span>
+        <strong>DROP PHOTOS OR CLICK</strong>
+        <em>JPG · PNG · WEBP · NOTHING LEAVES THIS TAB</em>
+        <input id="photo-input" type="file" accept="image/*" multiple>
+      </label>
+      <ul id="photo-grid" class="thumbs"></ul>
+    </section>
+
+    <section class="card">
+      <h2>LAYOUT</h2>
+      <div id="layout-list" class="layout-list"></div>
+    </section>
+
+    <section class="card">
+      <h2>GRADE</h2>
+      <div id="grade-list" class="grade-list"></div>
+    </section>
+
+    <p class="rail-note">3 STEPS TO A COVER — PHOTOS, LAYOUT, EXPORT</p>
+  </aside>
+
+  <main class="stage">
+    <div class="matte" id="matte">
+      <canvas id="preview" width="1000" height="1000" aria-label="Live cover preview"></canvas>
+    </div>
+    <div class="hud">
+      <span id="hud-line">1080 × 1080 · COLLAGE · SUNSET</span>
+      <span id="hud-ms">READY</span>
+    </div>
+  </main>
+
+  <aside class="rail rail-right">
+    <section class="card">
+      <h2 id="panel-title">PANEL 1</h2>
+      <div id="panel-chips" class="chips"></div>
+      <label class="field">
+        <span>FOCUS X <output id="focus-x-value">0.50</output></span>
+        <input id="focus-x" type="range" min="0" max="1" step="0.01" value="0.5">
+      </label>
+      <label class="field">
+        <span>FOCUS Y <output id="focus-y-value">0.50</output></span>
+        <input id="focus-y" type="range" min="0" max="1" step="0.01" value="0.5">
+      </label>
+      <label class="field">
+        <span>ZOOM <output id="zoom-value">1.00</output></span>
+        <input id="zoom" type="range" min="1" max="3" step="0.01" value="1">
+      </label>
+      <button id="fit-panel" class="ghost wide" type="button">FIT</button>
+    </section>
+
+    <section class="card">
+      <h2>CAPTION</h2>
+      <label class="field">
+        <span>KICKER</span>
+        <input id="caption-kicker" type="text" maxlength="34" value="VICE CITY · 1986" spellcheck="false">
+      </label>
+      <label class="field">
+        <span>TITLE <output>/ SPLITS LINES</output></span>
+        <textarea id="caption-title" rows="2" maxlength="46" spellcheck="false">LAST LIGHT / ON OCEAN DRIVE</textarea>
+      </label>
+      <label class="field">
+        <span>TAGLINE</span>
+        <input id="caption-tagline" type="text" maxlength="46" value="A HEIST, A HURRICANE, ONE NIGHT LEFT" spellcheck="false">
+      </label>
+    </section>
+
+    <section class="card">
+      <h2>EFFECTS</h2>
+      <label class="field">
+        <span>GRAIN <output id="fx-grain-value">0.55</output></span>
+        <input id="fx-grain" type="range" min="0" max="1" step="0.01" value="0.55">
+      </label>
+      <label class="field">
+        <span>HALFTONE <output id="fx-halftone-value">0.34</output></span>
+        <input id="fx-halftone" type="range" min="0" max="1" step="0.01" value="0.34">
+      </label>
+      <label class="field">
+        <span>SCANLINES <output id="fx-scan-value">0.18</output></span>
+        <input id="fx-scan" type="range" min="0" max="1" step="0.01" value="0.18">
+      </label>
+      <label class="field">
+        <span>VIGNETTE <output id="fx-vignette-value">0.50</output></span>
+        <input id="fx-vignette" type="range" min="0" max="1" step="0.01" value="0.5">
+      </label>
+      <label class="switch">
+        <input id="fx-frame" type="checkbox" checked>
+        <span>PANEL BORDER</span>
+      </label>
+    </section>
+  </aside>
+
+  <footer class="statusbar">
+    <span class="hints">DROP PHOTOS · CLICK A PANEL · ARROWS NUDGE · ⌘/CTRL+E EXPORT</span>
+    <div id="size-pills" class="sizes"></div>
+  </footer>
+</div>
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
 <script type="module" src="./src/main.js"></script>
 </body>
 </html>
